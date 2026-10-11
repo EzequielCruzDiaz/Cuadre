@@ -3,18 +3,32 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const create = vi.fn();
 vi.mock("@anthropic-ai/sdk", () => {
   class APIError extends Error {
-    status = 500;
+    status: number | undefined = 500;
+    type: string | null = null;
+    error: unknown;
+    requestID = "req_prueba";
   }
+  class APIConnectionError extends APIError {
+    status = undefined;
+  }
+  class APIConnectionTimeoutError extends APIConnectionError {}
   class Anthropic {
     static APIError = APIError;
+    static APIConnectionError = APIConnectionError;
+    static APIConnectionTimeoutError = APIConnectionTimeoutError;
     messages = { create };
   }
   return { default: Anthropic };
 });
 
-const { atenderLectura, explicarErrorApi } = await import("./factura-vision");
+const { atenderLectura, explicarErrorApi, sinClave } = await import("./factura-vision");
+type ErrorFalso = Error & { status: number | undefined; type: string | null; error: unknown; cause?: unknown };
 const { default: AnthropicFalso } = (await import("@anthropic-ai/sdk")) as unknown as {
-  default: { APIError: new (m: string) => Error & { status: number } };
+  default: {
+    APIError: new (m: string) => ErrorFalso;
+    APIConnectionError: new (m: string) => ErrorFalso;
+    APIConnectionTimeoutError: new (m: string) => ErrorFalso;
+  };
 };
 
 function peticion(...fotos: Blob[]) {
@@ -153,6 +167,56 @@ describe("POST /api/facturas/leer", () => {
     const json = await (await atenderLectura(peticion(jpg()))).json();
     expect(json.codigo).toBe("clave-invalida");
     expect(json.error).not.toContain("sk-ant-prueba");
+  });
+
+  it("dice y registra lo que respondió la API de verdad, sin la clave", async () => {
+    const consola = vi.spyOn(console, "error").mockImplementation(() => {});
+    const e = new AnthropicFalso.APIError("400 invalid_request_error");
+    e.status = 400;
+    e.type = "invalid_request_error";
+    e.error = { type: "error", error: { type: "invalid_request_error", message: "messages.0: bad image (key sk-ant-prueba)" } };
+    create.mockRejectedValue(e);
+    const json = await (await atenderLectura(peticion(jpg()))).json();
+    expect(json.codigo).toBe("api");
+    expect(json.error).toContain("bad image");
+    expect(json.error).not.toContain("sk-ant-prueba");
+    const registrado = consola.mock.calls.flat().join(" ");
+    expect(registrado).toContain("status=400");
+    expect(registrado).toContain("type=invalid_request_error");
+    expect(registrado).toContain("bad image");
+    expect(registrado).not.toContain("sk-ant-prueba");
+    consola.mockRestore();
+  });
+
+  it("sin conexión con la API muestra la causa (DNS, certificado, proxy)", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const e = new AnthropicFalso.APIConnectionError("Connection error.");
+    e.cause = Object.assign(new Error("getaddrinfo ENOTFOUND api.anthropic.com"), { code: "ENOTFOUND" });
+    create.mockRejectedValue(e);
+    const json = await (await atenderLectura(peticion(jpg()))).json();
+    expect(json.codigo).toBe("red");
+    expect(json.error).toContain("ENOTFOUND");
+  });
+
+  it("si se agota el tiempo lo dice", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    create.mockRejectedValue(new AnthropicFalso.APIConnectionTimeoutError("Request timed out."));
+    expect((await (await atenderLectura(peticion(jpg()))).json()).codigo).toBe("tiempo");
+  });
+
+  it("un fallo que no es de la API responde JSON con el motivo, no una página de error", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    create.mockRejectedValue(new TypeError("algo se rompió"));
+    const res = await atenderLectura(peticion(jpg()));
+    expect(res.status).toBe(500);
+    expect(await res.json()).toMatchObject({ codigo: "servidor" });
+  });
+});
+
+describe("sinClave", () => {
+  it("tapa la clave y recorta", () => {
+    expect(sinClave("clave sk-ant-api03-AbC_d-9 mala")).toBe("clave sk-ant-… mala");
+    expect(sinClave("x".repeat(10), 4)).toBe("xxxx…");
   });
 });
 

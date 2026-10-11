@@ -136,7 +136,12 @@ export async function leerFacturaConIA(imagenes: ImagenFactura[]): Promise<Campo
  * Por qué falló la llamada a la API, en palabras que la persona pueda
  * resolver. Nunca incluye la clave.
  */
-export function explicarErrorApi(status: number | undefined, detalle = ""): { codigo: string; mensaje: string } {
+export function explicarErrorApi(
+  status: number | undefined,
+  detalle = "",
+  tipo?: string | null,
+): { codigo: string; mensaje: string } {
+  if (tipo === "timeout") return { codigo: "tiempo", mensaje: "El servicio de IA tardó demasiado en responder: prueba otra vez." };
   if (status === 401) {
     return { codigo: "clave-invalida", mensaje: "La clave de IA no es válida o fue revocada: revisa ANTHROPIC_API_KEY." };
   }
@@ -154,6 +159,24 @@ export function explicarErrorApi(status: number | undefined, detalle = ""): { co
   if (status && status >= 500) return { codigo: "caido", mensaje: "El servicio de IA está saturado o caído: prueba otra vez." };
   if (status === undefined) return { codigo: "red", mensaje: "El servidor no pudo conectarse con el servicio de IA." };
   return { codigo: "api", mensaje: `El servicio de IA respondió con error ${status}.` };
+}
+
+/** Quita de un texto cualquier cosa con forma de clave y lo deja corto. */
+export function sinClave(texto: string, max = 300): string {
+  const limpio = texto.replace(/sk-ant-[\w-]+/g, "sk-ant-…").replace(/\s+/g, " ").trim();
+  return limpio.length > max ? `${limpio.slice(0, max)}…` : limpio;
+}
+
+/** Lo que dijo la API (o la red) de verdad, para la consola y la tarjeta de la foto. */
+function detalleDeError(e: InstanceType<typeof Anthropic.APIError>): { tipo: string | null; texto: string } {
+  if (e instanceof Anthropic.APIConnectionTimeoutError) return { tipo: "timeout", texto: e.message };
+  if (e instanceof Anthropic.APIConnectionError) {
+    // La causa real (DNS, certificado, proxy) viene en `cause`, no en el mensaje.
+    const causa = e.cause instanceof Error ? `${e.cause.message}${"code" in e.cause ? ` (${String(e.cause.code)})` : ""}` : "";
+    return { tipo: null, texto: [e.message, causa].filter(Boolean).join(": ") };
+  }
+  const cuerpo = e.error as { error?: { message?: string } } | undefined;
+  return { tipo: e.type, texto: cuerpo?.error?.message ?? e.message };
 }
 
 const error = (mensaje: string, status: number, codigo?: string) =>
@@ -202,12 +225,21 @@ export async function atenderLectura(request: Request): Promise<Response> {
     const campos = await leerFacturaConIA(imagenes);
     return Response.json({ campos });
   } catch (e) {
-    if (e instanceof ErrorLectura) return error(e.message, e.status);
-    if (e instanceof Anthropic.APIError) {
-      console.error("Lectura de factura con IA:", e.status, e.message);
-      const { codigo, mensaje } = explicarErrorApi(e.status, e.message);
-      return error(mensaje, 502, codigo);
+    if (e instanceof ErrorLectura) {
+      console.error("Lectura de factura con IA:", e.message);
+      return error(e.message, e.status);
     }
-    throw e;
+    if (e instanceof Anthropic.APIError) {
+      const { tipo, texto } = detalleDeError(e);
+      const detalle = sinClave(texto);
+      console.error(
+        `Lectura de factura con IA falló: status=${e.status ?? "sin respuesta"} type=${tipo ?? "-"} request_id=${e.requestID ?? "-"} message=${detalle}`,
+      );
+      const { codigo, mensaje } = explicarErrorApi(e.status, texto, tipo);
+      return error(`${mensaje} (${e.status ?? "red"}: ${sinClave(detalle, 160)})`, 502, codigo);
+    }
+    const detalle = sinClave(e instanceof Error ? e.message : String(e));
+    console.error("Lectura de factura con IA falló sin respuesta de la API:", detalle);
+    return error(`El servidor falló al leer la factura (${sinClave(detalle, 160)}).`, 500, "servidor");
   }
 }
