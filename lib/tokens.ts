@@ -17,6 +17,9 @@ export const colors = {
   sidebarBg: "#17332A",
   sidebarText: "#F4ECDF",
   sidebarMuted: "#93A79B",
+  /** Versiones oscuras para el "canto" de botones y sellos (efecto tinta/relieve). */
+  accentDeep: "#8E3414",
+  mangoDeep: "#C98A1B",
 } as const;
 
 export const font = {
@@ -28,8 +31,9 @@ export const font = {
 export const radius = { sm: 8, md: 12, lg: 16, xl: 22 } as const;
 
 export const shadow = {
-  card: "0 1px 0 rgba(42,29,23,0.04), 0 6px 18px -10px rgba(42,29,23,0.18)",
-  raised: "0 2px 0 rgba(42,29,23,0.05), 0 18px 40px -18px rgba(42,29,23,0.35)",
+  // "Lomo de libreta": un canto sólido abajo (como hojas apiladas) + sombra suave.
+  card: "0 3px 0 #E6D8C3, 0 14px 22px -16px rgba(42,29,23,0.28)",
+  raised: "0 5px 0 #D5C2A5, 0 22px 34px -18px rgba(42,29,23,0.4)",
 } as const;
 
 export const numeric = { fontVariantNumeric: "tabular-nums" } as const;

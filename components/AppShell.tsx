@@ -124,6 +124,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   fontWeight: active ? 800 : 600,
                   color: active ? colors.monte : colors.sidebarMuted,
                   background: active ? colors.mango : "transparent",
+                  boxShadow: active ? `0 3px 0 ${colors.mangoDeep}` : "none",
                 }}
               >
                 <svg
@@ -163,7 +164,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       <main className="app-main">
-        <div style={{ maxWidth: 1120, margin: "0 auto" }}>
+        <div key={path} className="pagina-entra" style={{ maxWidth: 1120, margin: "0 auto" }}>
           <StoreStatus />
           {children}
         </div>

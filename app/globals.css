@@ -1,3 +1,45 @@
+/*
+ * Tailwind v4 sin `preflight`: se importan solo el tema y las utilidades, para
+ * no resetear los estilos inline que ya usa toda la UI. Las clases de Tailwind
+ * conviven con `lib/tokens.ts` (misma paleta, expuesta abajo en @theme).
+ * Si cambias un valor en tokens.ts, cámbialo también aquí.
+ */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+@theme inline {
+  --color-bg: #f4ecdf;
+  --color-surface: #fffcf6;
+  --color-surface-alt: #fbf5ea;
+  --color-text: #2a1d17;
+  --color-text-muted: #6e5f55;
+  --color-text-faint: #9a8a7c;
+  --color-border: #e6d8c3;
+  --color-border-strong: #d5c2a5;
+  --color-accent: #b8471f;
+  --color-positive: #3e7b4f;
+  --color-mango: #f2b23e;
+  --color-mango-soft: #fff6e3;
+  --color-caribe: #1f6e86;
+  --color-monte: #17332a;
+  --color-monte-soft: #21443a;
+  --color-sidebar-muted: #93a79b;
+
+  --font-cuerpo: var(--font-sans), "Manrope", -apple-system, sans-serif;
+  --font-titulo: var(--font-display), "Fraunces", Georgia, serif;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+
+  --shadow-card: 0 3px 0 #e6d8c3, 0 14px 22px -16px rgba(42, 29, 23, 0.28);
+  --shadow-raised: 0 5px 0 #d5c2a5, 0 22px 34px -18px rgba(42, 29, 23, 0.4);
+  --color-accent-deep: #8e3414;
+  --color-mango-deep: #c98a1b;
+}
+
 *,
 *::before,
 *::after {
@@ -10,8 +52,13 @@ body {
   padding: 0;
 }
 
+/* Papel de libreta de cuentas ("cuadre"): grano fino + renglones muy tenues. */
 body {
-  background: #f4ecdf;
+  background-color: #f4ecdf;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .16 0 0 0 0 .11 0 0 0 0 .09 0 0 0 .06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+    repeating-linear-gradient(to bottom, transparent 0 31px, rgba(184, 71, 31, 0.07) 31px 32px);
+  background-attachment: scroll, local;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -31,6 +78,28 @@ button:not(:disabled) {
 
 button:not(:disabled):active {
   transform: translateY(1px);
+}
+
+/* Botones con canto sólido: al presionar, el canto se aplasta. */
+button:not(:disabled):active[style*="box-shadow"] {
+  transform: translateY(3px);
+  box-shadow: 0 0 0 rgba(0, 0, 0, 0) !important;
+}
+
+/* Titulares en Fraunces con rasgos "blandos" y letras con carácter (WONK). */
+[style*="--font-display"],
+.page-title h1 {
+  font-variation-settings: "SOFT" 100, "WONK" 1;
+}
+
+/* Subrayado ondulado en mango bajo cada título de pantalla. */
+.page-title h1::after {
+  content: "";
+  display: block;
+  width: 72px;
+  height: 8px;
+  margin-top: 12px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='8'%3E%3Cpath d='M0 4 Q6 0 12 4 T24 4' fill='none' stroke='%23F2B23E' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E") repeat-x left center / 24px 8px;
 }
 
 button:not(:disabled):hover {
@@ -367,3 +436,257 @@ textarea {
     padding: 20px 16px calc(80px + env(safe-area-inset-bottom));
   }
 }
+
+/* ---------- Movimiento ---------- */
+
+@keyframes paginaEntra {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes tarjetaEntra {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes brillo {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.pagina-entra {
+  animation: paginaEntra 360ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
+}
+
+/* Las tarjetas de las listas entran en cascada (hasta 8; el resto, juntas). */
+.grid-recetas > *,
+.grid-recibos > *,
+.grid-stats > *,
+.fila-inventario {
+  animation: tarjetaEntra 420ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
+}
+
+.grid-recetas > :nth-child(2), .grid-recibos > :nth-child(2), .grid-stats > :nth-child(2) { animation-delay: 50ms; }
+.grid-recetas > :nth-child(3), .grid-recibos > :nth-child(3), .grid-stats > :nth-child(3) { animation-delay: 100ms; }
+.grid-recetas > :nth-child(4), .grid-recibos > :nth-child(4), .grid-stats > :nth-child(4) { animation-delay: 150ms; }
+.grid-recetas > :nth-child(5), .grid-recibos > :nth-child(5) { animation-delay: 200ms; }
+.grid-recetas > :nth-child(6), .grid-recibos > :nth-child(6) { animation-delay: 250ms; }
+.grid-recetas > :nth-child(7), .grid-recibos > :nth-child(7) { animation-delay: 300ms; }
+.grid-recetas > :nth-child(n + 8), .grid-recibos > :nth-child(n + 8) { animation-delay: 350ms; }
+
+/* Elevación sutil solo donde hay un puntero real (no en táctil). */
+@media (hover: hover) {
+  .grid-recetas > *,
+  .fila-inventario {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .grid-recetas > *:hover,
+  .grid-recetas > *:focus-within,
+  .fila-inventario:hover,
+  .fila-inventario:focus-within {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 0 #d5c2a5, 0 22px 34px -18px rgba(42, 29, 23, 0.4) !important;
+  }
+}
+
+.app-nav-link {
+  transition: background-color 0.18s ease, color 0.18s ease, transform 0.12s ease;
+}
+
+.app-nav-link:not([aria-current="page"]):hover {
+  background: rgba(244, 236, 223, 0.08);
+  color: #f4ecdf;
+}
+
+.esqueleto {
+  border-radius: 14px;
+  background: linear-gradient(90deg, #e6d8c3 25%, #f1e6d3 50%, #e6d8c3 75%);
+  background-size: 200% 100%;
+  animation: brillo 1.4s linear infinite;
+}
+
+/* Quien pide menos movimiento en su sistema no recibe ninguno. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---------- Modal del caldero (borrar = echar al fuego) ---------- */
+
+@keyframes velo {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalSube {
+  from { opacity: 0; transform: translateY(18px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes ticketFlota {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-6px) rotate(1.5deg); }
+}
+
+@keyframes ticketCae {
+  0% { transform: translateY(0) rotate(-2deg) scale(1); opacity: 1; filter: none; }
+  45% { transform: translateY(62px) rotate(6deg) scale(0.92); opacity: 1; filter: none; }
+  70% { transform: translateY(108px) rotate(10deg) scale(0.8); opacity: 1; filter: brightness(0.55) sepia(1) saturate(3); }
+  100% { transform: translateY(138px) rotate(14deg) scale(0.6); opacity: 0; filter: brightness(0.15); }
+}
+
+@keyframes llama {
+  0%, 100% { transform: scale(1, 1); }
+  33% { transform: scale(0.94, 1.12); }
+  66% { transform: scale(1.05, 0.94); }
+}
+
+@keyframes llamaFuerte {
+  from { transform: scale(1, 1); }
+  to { transform: scale(1.14, 1.75); }
+}
+
+@keyframes chispa {
+  0% { transform: translate(0, 0) scale(1); opacity: 0; }
+  15% { opacity: 1; }
+  100% { transform: translate(var(--dx), -125px) scale(0.2); opacity: 0; }
+}
+
+@keyframes humo {
+  0% { transform: translate(0, 0) scale(0.4); opacity: 0; }
+  25% { opacity: 0.45; }
+  100% { transform: translate(var(--dx), -115px) scale(1.7); opacity: 0; }
+}
+
+@keyframes brasa {
+  from { opacity: 0; transform: scale(0.6); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.caldero-velo {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(23, 51, 42, 0.62);
+  backdrop-filter: blur(3px);
+  animation: velo 200ms ease-out both;
+}
+
+.caldero-panel {
+  width: min(420px, 100%);
+  max-height: 100%;
+  overflow-y: auto;
+  padding: 24px 24px 26px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  animation: modalSube 280ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
+}
+
+.caldero-escena {
+  position: relative;
+  width: 240px;
+  height: 240px;
+  margin: 4px 0 2px;
+}
+
+.caldero-escena > * {
+  position: absolute;
+  left: 50%;
+  margin-left: -100px;
+}
+
+.caldero-brasa {
+  top: 110px;
+  height: 130px;
+  width: 200px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(242, 178, 62, 0.55), rgba(184, 71, 31, 0.18) 60%, transparent);
+  opacity: 0;
+}
+
+.caldero-fondo { top: 78px; z-index: 1; }
+.caldero-cuerpo { top: 78px; z-index: 3; }
+.caldero-fuego { bottom: 0; z-index: 4; }
+
+.caldero-ticket {
+  top: 14px;
+  width: 150px;
+  margin-left: -75px;
+  z-index: 2;
+  padding: 10px 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: left;
+  background: #fffcf6;
+  border: 1px solid #e6d8c3;
+  animation: ticketFlota 2.4s ease-in-out infinite;
+}
+
+.llama {
+  transform-origin: 50% 100%;
+  transform-box: fill-box;
+  animation: llama 0.9s ease-in-out infinite;
+}
+
+.caldero-chispa,
+.caldero-humo {
+  top: 112px;
+  z-index: 5;
+  opacity: 0;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.caldero-chispa {
+  width: 5px;
+  height: 5px;
+  margin-left: -2px;
+  background: #f2b23e;
+  box-shadow: 0 0 6px 1px #e8742a;
+}
+
+.caldero-humo {
+  width: 36px;
+  height: 36px;
+  margin-left: -18px;
+  background: radial-gradient(closest-side, rgba(70, 58, 52, 0.5), transparent);
+}
+
+/* Al confirmar: el papelito cae, el fuego se alza, salen chispas y humo. */
+.quemando .caldero-brasa { animation: brasa 500ms ease-out 0.15s both; }
+.quemando .caldero-ticket { animation: ticketCae 0.85s cubic-bezier(0.5, 0, 0.75, 0.6) forwards; }
+.quemando .llama { animation: llamaFuerte 0.5s ease-out 0.35s forwards; }
+.quemando .caldero-chispa { animation: chispa 0.9s ease-out both; }
+.quemando .caldero-humo { animation: humo 1.1s ease-out both; }

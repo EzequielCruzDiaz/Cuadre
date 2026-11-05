@@ -1,5 +1,6 @@
 "use client";
 
+import { useConfirmarBorrado } from "@/components/ConfirmarBorrado";
 import { FormularioInventario } from "@/components/FormularioInventario";
 import { ListaInventario } from "@/components/ListaInventario";
 import { EmptyState, PageTitle, buttonStyle } from "@/components/ui";
@@ -11,11 +12,12 @@ function irAlForm() {
 
 export default function InventarioPage() {
   const { inventario, addIngrediente, updateIngrediente, removeIngrediente } = useStore();
+  const confirmarBorrado = useConfirmarBorrado();
 
-  function confirmarYQuitar(id: string) {
+  async function confirmarYQuitar(id: string) {
     const ing = inventario.find((i) => i.id === id);
     const nombre = ing?.nombre ?? "este ingrediente";
-    if (confirm(`¿Quitar "${nombre}" del inventario? Esta acción no se puede deshacer.`)) {
+    if (await confirmarBorrado({ cosa: "ingrediente", nombre, detalle: "Se quita del inventario." })) {
       removeIngrediente(id);
     }
   }

@@ -89,7 +89,20 @@ export function EncabezadoResumen({ nombreNegocio, onGuardarNombre }: Encabezado
         >
           <span suppressHydrationWarning>{saludo(ahora.getHours())}</span>
           {nombreNegocio ? "," : ""}{" "}
-          {nombreNegocio && <em style={{ fontStyle: "italic", fontWeight: 500, color: colors.monteSoft }}>{nombreNegocio}</em>}
+          {nombreNegocio && (
+            <em
+              style={{
+                fontStyle: "italic",
+                fontWeight: 500,
+                color: colors.monteSoft,
+                // Subrayador de marcador mango bajo el nombre del negocio.
+                background: `linear-gradient(transparent 62%, ${colors.mango}99 62% 92%, transparent 92%)`,
+                padding: "0 4px",
+              }}
+            >
+              {nombreNegocio}
+            </em>
+          )}
           <button
             type="button"
             onClick={() => {

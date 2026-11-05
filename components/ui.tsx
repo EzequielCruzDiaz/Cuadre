@@ -111,7 +111,8 @@ export function Eyebrow({ children, color }: { children: React.ReactNode; color?
         marginBottom: 10,
       }}
     >
-      <span style={{ width: 18, height: 2, borderRadius: 2, background: colors.mango }} />
+      {/* Rombo del mosaico: la misma figura del patrón de la marca. */}
+      <span style={{ width: 8, height: 8, background: colors.mango, transform: "rotate(45deg)", flexShrink: 0 }} />
       {children}
     </div>
   );
@@ -302,14 +303,18 @@ export function Badge({ label, color }: { label: string; color?: string }) {
         fontWeight: 800,
         letterSpacing: 0.6,
         textTransform: "uppercase",
-        padding: "4px 9px",
-        borderRadius: 999,
+        padding: "3px 9px",
+        borderRadius: 6,
         color: c,
-        background: `${c}17`,
+        // Sello de goma: borde doble, ligeramente torcido.
+        border: `1.5px solid ${c}`,
+        outline: `1px solid ${c}55`,
+        outlineOffset: 2,
+        background: `${c}10`,
+        transform: "rotate(-2deg)",
         whiteSpace: "nowrap",
       }}
     >
-      <span style={{ width: 5, height: 5, borderRadius: "50%", background: c }} />
       {label}
     </span>
   );
@@ -342,6 +347,7 @@ export function Chip({
         border: `1px solid ${active ? colors.monte : colors.border}`,
         background: active ? colors.monte : colors.surface,
         color: active ? colors.sidebarText : colors.textMuted,
+        boxShadow: active ? `0 2px 0 ${colors.mango}` : "none",
         cursor: "pointer",
         fontFamily: "inherit",
         whiteSpace: "nowrap",
@@ -369,6 +375,7 @@ export function StockMeter({ stock, minimo }: { stock: number; minimo: number })
           width: `${pct}%`,
           borderRadius: 99,
           background: bajo ? colors.accent : colors.positive,
+          transition: "width 500ms cubic-bezier(0.22, 0.9, 0.2, 1), background-color 300ms ease",
         }}
       />
       <div
@@ -462,7 +469,8 @@ export const buttonStyle: React.CSSProperties = {
   border: "none",
   color: "#FFFFFF",
   background: colors.accent,
-  boxShadow: `0 6px 16px -8px ${colors.accent}`,
+  // Canto sólido oscuro: el botón se "hunde" al presionarlo (ver globals.css).
+  boxShadow: `0 3px 0 ${colors.accentDeep}, 0 10px 16px -10px ${colors.accent}`,
   cursor: "pointer",
   fontFamily: "inherit",
 };
@@ -615,6 +623,7 @@ export function Select({
   ariaLabel?: string;
 }) {
   const [abierto, setAbierto] = useState(false);
+  const [activo, setActivo] = useState(-1);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -635,6 +644,24 @@ export function Select({
 
   const actual = options.find((o) => o.value === value);
 
+  function abrir() {
+    setActivo(Math.max(0, options.findIndex((o) => o.value === value)));
+    setAbierto(true);
+  }
+
+  function onTeclaBoton(e: React.KeyboardEvent) {
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      if (!abierto) return abrir();
+      const paso = e.key === "ArrowDown" ? 1 : -1;
+      setActivo((a) => Math.min(options.length - 1, Math.max(0, a + paso)));
+    } else if (e.key === "Enter" && abierto && options[activo]) {
+      e.preventDefault();
+      onChange(options[activo].value);
+      setAbierto(false);
+    }
+  }
+
   const grupos: { nombre: string | null; items: SelectOption[] }[] = [];
   for (const opt of options) {
     const clave = opt.group ?? null;
@@ -651,7 +678,8 @@ export function Select({
       <button
         type="button"
         disabled={disabled}
-        onClick={() => setAbierto((a) => !a)}
+        onClick={() => (abierto ? setAbierto(false) : abrir())}
+        onKeyDown={onTeclaBoton}
         aria-haspopup="listbox"
         aria-expanded={abierto}
         data-invalido={error ? "true" : undefined}
@@ -690,6 +718,7 @@ export function Select({
             boxShadow: "0 10px 28px rgba(42,29,23,0.18)",
             padding: 4,
             zIndex: 40,
+            animation: "recetaItemEntra 160ms ease-out",
           }}
         >
           {grupos.map((g, gi) => (
@@ -711,6 +740,9 @@ export function Select({
               {g.items.map((opt) => (
                 <div
                   key={opt.value}
+                  ref={(el) => {
+                    if (el && options[activo]?.value === opt.value) el.scrollIntoView({ block: "nearest" });
+                  }}
                   role="option"
                   aria-selected={opt.value === value}
                   onClick={() => {
@@ -723,7 +755,12 @@ export function Select({
                     fontSize: 13,
                     cursor: "pointer",
                     color: colors.text,
-                    background: opt.value === value ? `${colors.mango}33` : "transparent",
+                    background:
+                      opt.value === value
+                        ? `${colors.mango}33`
+                        : options[activo]?.value === opt.value
+                          ? `${colors.text}0A`
+                          : "transparent",
                   }}
                 >
                   {opt.label}

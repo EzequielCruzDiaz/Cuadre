@@ -20,6 +20,11 @@
 - **Idioma.** Términos del dominio en español (`receta`, `factura`, `inventario`,
   `ingrediente`, `costo`); el resto puede ser inglés. Nombres de componentes hoy
   mezclados — al tocar uno, alinéalo al español.
+- **Estilos.** Tailwind v4 está instalado **sin `preflight`** (solo tema +
+  utilidades) para no romper los estilos inline existentes. Código nuevo usa
+  clases de Tailwind; los tokens de `lib/tokens.ts` se espejan en `@theme` de
+  `app/globals.css` (si cambias uno, cambia el otro). Migrar lo viejo
+  gradualmente, no en bloque.
 - **Diseño.** `accent` (`#B8471F`) solo para lo accionable o de alerta, nunca
   decorativo. Números con `tabular-nums`. Filas de listas = tarjetas. Paleta y
   tipografía desde `lib/tokens.ts`.

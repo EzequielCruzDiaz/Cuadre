@@ -4,12 +4,13 @@ import "./globals.css";
 import { StoreProvider } from "@/components/StoreProvider";
 import { AppShell } from "@/components/AppShell";
 import { AuthGate } from "@/components/AuthGate";
+import { ConfirmarBorradoProvider } from "@/components/ConfirmarBorrado";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 
 const fraunces = Fraunces({
   subsets: ["latin"],
   style: ["normal", "italic"],
-  axes: ["SOFT", "opsz"],
+  axes: ["SOFT", "WONK", "opsz"],
   variable: "--font-display",
 });
 
@@ -40,7 +41,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body>
         <AuthGate>
           <StoreProvider>
-            <AppShell>{children}</AppShell>
+            <ConfirmarBorradoProvider>
+              <AppShell>{children}</AppShell>
+            </ConfirmarBorradoProvider>
           </StoreProvider>
         </AuthGate>
         <ServiceWorkerRegister />

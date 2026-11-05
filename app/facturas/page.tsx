@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useConfirmarBorrado } from "@/components/ConfirmarBorrado";
 import { ConfirmarFactura } from "@/components/ConfirmarFactura";
 import { ReciboFactura } from "@/components/ReciboFactura";
 import { PageTitle, SectionTitle } from "@/components/ui";
@@ -9,14 +10,17 @@ import { useStore } from "@/components/StoreProvider";
 
 export default function FacturasPage() {
   const { facturas, inventario, addFactura, removeFactura } = useStore();
+  const confirmarBorrado = useConfirmarBorrado();
   const [formKey, setFormKey] = useState(0);
 
-  function confirmarYBorrar(f: Factura) {
+  async function confirmarYBorrar(f: Factura) {
     const vinculados = f.items.some((it) => it.ingredientId);
-    const mensaje = vinculados
-      ? `¿Borrar la factura de "${f.proveedor}"? También se revierte el stock que sumó.`
-      : `¿Borrar la factura de "${f.proveedor}"?`;
-    if (confirm(mensaje)) removeFactura(f.id);
+    const ok = await confirmarBorrado({
+      cosa: "factura",
+      nombre: f.proveedor,
+      detalle: vinculados ? "También se revierte el stock que sumó." : undefined,
+    });
+    if (ok) removeFactura(f.id);
   }
 
   return (

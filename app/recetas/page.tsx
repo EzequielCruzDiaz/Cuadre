@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useConfirmarBorrado } from "@/components/ConfirmarBorrado";
 import { EscaladorReceta } from "@/components/EscaladorReceta";
 import { ListaRecetas } from "@/components/ListaRecetas";
 import { RecetaEditor } from "@/components/RecetaEditor";
@@ -13,6 +14,7 @@ function irA(id: string) {
 
 export default function RecetasPage() {
   const { recetas, inventario, addReceta, removeReceta, updateProduccion } = useStore();
+  const confirmarBorrado = useConfirmarBorrado();
   const [escalarId, setEscalarId] = useState<string | null>(null);
   const [editorKey, setEditorKey] = useState(0);
 
@@ -20,10 +22,10 @@ export default function RecetasPage() {
   const vacio = recetas.length === 0;
 
 
-  function confirmarYBorrar(nombre: string, id: string) {
-    if (confirm(`¿Borrar la receta "${nombre}"? Esta acción no se puede deshacer.`)) {
+  async function confirmarYBorrar(nombre: string, id: string) {
+    if (await confirmarBorrado({ cosa: "receta", nombre })) {
       removeReceta(id);
-      if (id === escalarId) setEscalarId(null);
+      setEscalarId((actual) => (actual === id ? null : actual));
     }
   }
 

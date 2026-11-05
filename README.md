@@ -13,7 +13,7 @@ Permite:
 ## Stack
 
 - **Next.js 16** (App Router) + **TypeScript** + **React 19**
-- Sin Tailwind — el sistema de diseño (paleta, tipografía, radios) vive en [`lib/tokens.ts`](lib/tokens.ts) y se aplica con estilos inline.
+- Tailwind v4 (solo tema + utilidades, sin `preflight`) convive con los estilos inline: la paleta, tipografía y radios viven en [`lib/tokens.ts`](lib/tokens.ts) y se espejan en `@theme` de [`app/globals.css`](app/globals.css). Código nuevo: clases de Tailwind; el existente se migra gradualmente.
 - Estado vía React Context ([`components/StoreProvider.tsx`](components/StoreProvider.tsx)) con **dos backends**: `localStorage` (por defecto, sin login) o **Supabase** (cuando hay `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY`). Cada cliente final tiene su propio proyecto de Supabase — ver [`docs/SUPABASE.md`](docs/SUPABASE.md).
 - Distribución: **PWA**, venta única, una instancia por cliente.
 - **Se entrega vacía**: sin recetas ni ingredientes precargados. La carga inicial de cada cliente es un paso operativo manual al momento de la venta. Los datos demo (`lib/recetas-iniciales.ts`: pollo, cebolla, ajo + 1 receta) solo cargan con `NODE_ENV=development`.

@@ -25,6 +25,7 @@ import {
 } from "@/lib/factura";
 import { UNIT_INFO, unidadesDisponibles } from "@/lib/units";
 import { colors, numeric, radius } from "@/lib/tokens";
+import { useConfirmarBorrado } from "./ConfirmarBorrado";
 import { EscanearFactura } from "./EscanearFactura";
 import {
   FormHeader,
@@ -76,6 +77,7 @@ function opcionesUnidad(ing: InventoryIngredient | undefined, actual: Unit | nul
 }
 
 export function ConfirmarFactura({ inventario, facturas, onConfirmar }: ConfirmarFacturaProps) {
+  const confirmarBorrado = useConfirmarBorrado();
   const [lecturas, setLecturas] = useState<LecturaFactura[]>([]);
   const [enc, setEnc] = useState<Encabezado>({ proveedor: "", fecha: hoyLocal(), rnc: "", ncf: "" });
   const { proveedor, fecha, rnc, ncf } = enc;
@@ -117,9 +119,16 @@ export function ConfirmarFactura({ inventario, facturas, onConfirmar }: Confirma
     setTotalManual(t.total);
   }
 
-  function quitar(l: LecturaFactura) {
+  async function quitar(l: LecturaFactura) {
     const cuantos = items.filter((it) => it.origen === l.id).length;
-    if (cuantos > 0 && !confirm(`¿Quitar esta factura y sus ${cuantos} ${cuantos === 1 ? "producto" : "productos"}?`)) return;
+    if (cuantos > 0) {
+      const ok = await confirmarBorrado({
+        cosa: "factura escaneada",
+        nombre: l.campos.proveedor || `Factura ${lecturas.findIndex((x) => x.id === l.id) + 1}`,
+        detalle: `También se quitan sus ${cuantos} ${cuantos === 1 ? "producto" : "productos"}.`,
+      });
+      if (!ok) return;
+    }
     URL.revokeObjectURL(l.foto);
     fotos.current = fotos.current.filter((u) => u !== l.foto);
     const restantes = lecturas.filter((x) => x.id !== l.id);
